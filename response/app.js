@@ -1,5 +1,6 @@
 var express = require('express');
 var path = require('path');
+var fs = require('fs');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
@@ -7,6 +8,8 @@ var bodyParser = require('body-parser');
 
 var routes = require('./routes/index');
 var users = require('./routes/users');
+
+var largeImagePath = path.join(__dirname, 'files', 'large-image.jpg');
 
 var app = express();
 
@@ -72,6 +75,33 @@ app.get('/send-err', function(req, res){
 app.get('/send-buf', function(req, res){
     res.set('Content-Type', 'text/plain');
     res.send(new Buffer('text data that will be converted into Buffer'));
+});
+
+app.get('/non-stream', function(req, res) {
+  var file = fs.readFileSync(largeImagePath);
+  res.end(file);
+});
+
+app.get('/non-stream2', function(req, res) {
+  var file = fs.readFile(largeImagePath, function(error, data){
+    res.end(data);
+  });
+});
+
+app.get('/stream1', function(req, res) {
+  var stream = fs.createReadStream(largeImagePath);
+  stream.pipe(res);
+});
+
+
+app.get('/stream2', function(req, res) {
+  var stream = fs.createReadStream(largeImagePath);
+  stream.on('data', function(data) {
+    res.write(data);
+  });
+  stream.on('end', function() {
+    res.end();
+  });
 });
 
 // catch 404 and forward to error handler
